@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Link,useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useDispatch, useSelector } from 'react-redux';
+import { signInStart, signInSuccess, signInFailure } from '../redux/user/userSlice';
+
 function Signin() {
   const [formData, setFormData] = useState({});
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.user);
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -15,8 +18,7 @@ function Signin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
+    dispatch(signInStart());
     try {
       const res = await axios.post('/api/auth/signin', formData, {
         headers: {
@@ -26,19 +28,17 @@ function Signin() {
       
       const data = res.data;
       console.log(data);
-      navigate('/')
+      dispatch(signInSuccess(data));
+      navigate('/');
     } catch (error) {
       if (error.response && error.response.status === 404) {
-        setError('User not found');
-      }else if (error.response.status === 401) {
-        setError('Invalid credentials');
-      } 
-      else {
-        setError('An error occurred. Please try again.');
+        dispatch(signInFailure('User not found'));
+      } else if (error.response && error.response.status === 401) {
+        dispatch(signInFailure('Invalid credentials'));
+      } else {
+        dispatch(signInFailure('An error occurred. Please try again.'));
       }
       console.error('Error during signup:', error.response ? error.response.data : error.message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -48,14 +48,14 @@ function Signin() {
       <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
         <input
           type="email"
-          placeholder='email'
+          placeholder='Email'
           className='border p-3 rounded-lg'
           id='email'
           onChange={handleChange}
         />
         <input
           type="password"
-          placeholder='password'
+          placeholder='Password'
           className='border p-3 rounded-lg'
           id='password'
           onChange={handleChange}
@@ -70,7 +70,7 @@ function Signin() {
       </form>
       {error && <p className='text-red-500 mt-4'>{error}</p>}
       <div className='flex gap-2 mt-5'>
-        <p>Dont Have an account?</p>
+        <p>Don't have an account?</p>
         <Link to='/sign-up'>
           <span className='text-blue-700'>Sign Up</span>
         </Link>
