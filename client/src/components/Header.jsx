@@ -5,8 +5,6 @@ import { useSelector } from 'react-redux';
 
 function Header() {
   const { currentUser } = useSelector(state => state.user);
-  console.log("currentUser:", currentUser); // Check entire currentUser object
-  console.log("avatar:", currentUser ? currentUser.data.avatar : "No avatar found"); 
 
   return (
     <header className='bg-slate-200 shadow-md'>
