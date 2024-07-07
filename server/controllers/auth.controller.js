@@ -22,7 +22,6 @@ export const signup = asyncHandler(async(req,res)=>{
          new ApiResponse(200,"User registered successfully")
         )
 })
-
 export const signin = asyncHandler(async(req,res)=>{
     const {email,password} = req.body
     
@@ -37,7 +36,7 @@ export const signin = asyncHandler(async(req,res)=>{
         const token = jwt.sign({id:validUser._id},process.env.JWT_SECRET)
         const {password:pass, ...rest} = validUser._doc
         res
-        .cookie('access_token',token,{httpOnly:true})
+        .cookie('access_token',token,{httpOnly:true}) 
         .status(200)
         .json(new ApiResponse(200,rest,"User logged in successfully"))
 })
@@ -48,7 +47,7 @@ export const google = asyncHandler(async(req,res)=>{
         const token = jwt.sign({id:user._id},process.env.JWT_SECRET)
         const {password:pass,...rest} = user._doc
         res
-        .cookie('access token',token,{httpOnly:true})
+        .cookie('access_token',token,{httpOnly:true})
         .status(200)
         .json(new ApiResponse(200,rest,"User logged in successfully"))
     }
@@ -67,7 +66,7 @@ export const google = asyncHandler(async(req,res)=>{
         const token = jwt.sign({id:newUser._id},process.env.JWT_SECRET)
         const{password:pass,...rest} = newUser._doc
         res
-        .cookie('access token',token,{httpOnly:true})
+        .cookie('access_token',token,{httpOnly:true})
         .status(200)
         .json(new ApiResponse(200,rest,"User registered successfully"))
     }

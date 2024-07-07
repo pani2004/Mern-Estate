@@ -26,7 +26,6 @@ function Signin() {
           'Content-Type': 'application/json',
         },
       });
-      
       const data = res.data;
       console.log(data);
       dispatch(signInSuccess(data));

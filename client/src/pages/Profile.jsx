@@ -2,18 +2,23 @@ import { useRef,useState,useEffect } from "react"
 import { useSelector } from "react-redux"
 import {getDownloadURL, getStorage,ref, uploadBytesResumable} from 'firebase/storage'
 import {app} from '../fireBase'
+import { updateUserStart,updateUserSuccess,updateUserFailure } from "../redux/user/userSlice"
+import { useDispatch } from "react-redux"
+import axios from "axios"
 function Profile() {
   const fileRef = useRef(null)
-  const {currentUser} = useSelector((state)=>state.user)
+  const {currentUser,loading,error} = useSelector((state)=>state.user)
   const [file,setFile] = useState(undefined)
   const [filePerc,setFilePerc] = useState(0)
   const [fileUploadError,setFileUploadError] = useState(false)
   const [formData,setFormData] = useState({})
+  const [updateSuccess,setUpdateSucess] = useState(false)
   useEffect(()=>{
     if(file){
       handleFileUpload(file)
     }
   },[file])
+  const dispatch = useDispatch()
   const handleFileUpload =(file)=>{
      const storage = getStorage(app)
      const fileName = new Date().getTime() + file.name
@@ -34,10 +39,43 @@ function Profile() {
       })
      })
   }
+  const handleChange = (e)=>{
+     setFormData({...formData ,[e.target.id]: e.target.value})
+  }
+  const handleSubmit = async(e)=>{
+    e.preventDefault()
+    try {
+      dispatch(updateUserStart())
+      
+      const res = await axios.post(`/api/user/update/${currentUser.data._id}`, formData, {
+        headers: {
+          'Content-Type': 'application/json',
+          withCredentials: true
+        },
+      });
+      
+      const data = res.data;
+      if(data.success === false){
+        dispatch(updateUserFailure(data.message));
+        return;
+      }
+      
+      dispatch(updateUserSuccess(data));
+      setUpdateSucess(true)
+    } catch (error) {
+      if (error.response && error.response.status === 401){
+        dispatch(updateUserFailure("Unauthorized request. Please login again."));
+      }
+      else{
+        dispatch(updateUserFailure(error.message))
+      }
+    }
+  }
+  
   return (
     <div className='p-3 max-w-lg mx-auto'>
       <h1 className='text-3xl text-center font-semibold my-5'>Profile</h1>
-      <form className='flex flex-col gap-4'>
+      <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
         <input onChange={(e)=>setFile(e.target.files[0])} 
         type="file" ref={fileRef} hidden accept='image/*'/>
         <img onClick={()=>fileRef.current.click()}
@@ -55,15 +93,22 @@ function Profile() {
           :""
           }
         </p>
-        <input type="text" placeholder="username" id="username" className='border p-3 rounded-lg'/>
-        <input type="email" placeholder="email" id="email" className='border p-3 rounded-lg'/>
-        <input type="password" placeholder="password" id="password" className='border p-3 rounded-lg'/>
-        <button className='bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80'>Update</button>
+        <input type="text" placeholder="username" id="username" className='border p-3 rounded-lg'
+        defaultValue={currentUser.data.username} onChange={handleChange}/>
+        <input type="email" placeholder="email" id="email" className='border p-3 rounded-lg'
+        defaultValue={currentUser.data.email} onChange={handleChange}/>
+        <input type="password" placeholder="password" id="password" className='border p-3 rounded-lg'
+         onChange={handleChange}/>
+        <button disabled={loading} className='bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80'>
+          {loading? 'Loading...':'Update'}
+        </button>
       </form>
       <div className='flex justify-between mt-5'>
         <span className="text-red-700 cursor-pointer">Delete Account</span>
         <span className="text-red-700 cursor-pointer">Sign Out</span>
       </div>
+      <p className="text-red-700 mt-5">{error?error:""}</p>
+      <p className="text-green-700 mt-5">{updateSuccess? "User is updated successfully":""}</p>
     </div>
   )
 }

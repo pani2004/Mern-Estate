@@ -9,6 +9,7 @@ export const verifyUser = asyncHandler(async(req,res,next)=>{
         if(!token){
             throw new ApiError(401, "Unauthorized request: No token provided");
         }
+        
         const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decodedToken?.id).select("-password");  
         if (!user) {
@@ -20,4 +21,4 @@ export const verifyUser = asyncHandler(async(req,res,next)=>{
         console.error(`JWT verification error: ${error.message}`); 
         throw new ApiError(401, error?.message || "Unauthorized request: Invalid access token");
     }
-})
+}) 
