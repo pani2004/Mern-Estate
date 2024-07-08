@@ -23,6 +23,17 @@ export const updateUser = asyncHandler(async(req,res)=>{
         ).select("-password")
         return res.status(200).json(new ApiResponse(200,updateduser,"Account details updated successfully"))
     } catch (error) {
-        
+    }
+})
+
+export const deleteUser = asyncHandler(async(req,res)=>{
+    if(req.user.id!== req.params.id)
+    throw new ApiError(401,"You can only delete your own account")
+    const deletedUser = await User.findByIdAndDelete(req.params.id)
+    if(deleteUser){
+        return res.clearCookie("access_token").status(200).json(new ApiResponse(200,deletedUser,"User deleted"))
+    }
+    else{
+        throw new ApiError(501,"Internal Server error")
     }
 })

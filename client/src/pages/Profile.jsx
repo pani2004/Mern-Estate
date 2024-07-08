@@ -1,116 +1,151 @@
-import { useRef,useState,useEffect } from "react"
-import { useSelector } from "react-redux"
-import {getDownloadURL, getStorage,ref, uploadBytesResumable} from 'firebase/storage'
-import {app} from '../fireBase'
-import { updateUserStart,updateUserSuccess,updateUserFailure } from "../redux/user/userSlice"
-import { useDispatch } from "react-redux"
-import axios from "axios"
+import { useRef, useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
+import { app } from '../fireBase';
+import { updateUserStart, updateUserSuccess, updateUserFailure, deleteUserFailure, deleteUserStart, deleteUserSuccess, signoutUserStart, signoutUserSuccess, signoutUserFailure } from "../redux/user/userSlice";
+import axios from "axios";
+
 function Profile() {
-  const fileRef = useRef(null)
-  const {currentUser,loading,error} = useSelector((state)=>state.user)
-  const [file,setFile] = useState(undefined)
-  const [filePerc,setFilePerc] = useState(0)
-  const [fileUploadError,setFileUploadError] = useState(false)
-  const [formData,setFormData] = useState({})
-  const [updateSuccess,setUpdateSucess] = useState(false)
-  useEffect(()=>{
-    if(file){
-      handleFileUpload(file)
+  const fileRef = useRef(null);
+  const { currentUser, loading, error } = useSelector((state) => state.user);
+  const [file, setFile] = useState(undefined);
+  const [filePerc, setFilePerc] = useState(0);
+  const [fileUploadError, setFileUploadError] = useState(false);
+  const [formData, setFormData] = useState({
+    username: currentUser.data.username,
+    email: currentUser.data.email,
+    avatar: currentUser.data.avatar,
+  });
+  const [updateSuccess, setUpdateSuccess] = useState(false);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (file) {
+      handleFileUpload(file);
     }
-  },[file])
-  const dispatch = useDispatch()
-  const handleFileUpload =(file)=>{
-     const storage = getStorage(app)
-     const fileName = new Date().getTime() + file.name
-     const storageRef = ref(storage,fileName)
-     const uploadTask = uploadBytesResumable(storageRef,file)
-     uploadTask.on('state_changed',
-      (snapshot)=>{
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes)*100
-        setFilePerc(Math.round(progress))
+  }, [file]);
+
+  const handleFileUpload = (file) => {
+    const storage = getStorage(app);
+    const fileName = new Date().getTime() + file.name;
+    const storageRef = ref(storage, fileName);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+    uploadTask.on('state_changed',
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setFilePerc(Math.round(progress));
       },
-     (error)=>{
-      setFileUploadError(true)
-     },
-     ()=>{
-      getDownloadURL(uploadTask.snapshot.ref).then
-      ((downloadUrl)=>{
-          setFormData({...formData ,avatar:downloadUrl})
-      })
-     })
-  }
-  const handleChange = (e)=>{
-     setFormData({...formData ,[e.target.id]: e.target.value})
-  }
-  const handleSubmit = async(e)=>{
-    e.preventDefault()
+      (error) => {
+        setFileUploadError(true);
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadUrl) => {
+          setFormData((prev) => ({ ...prev, avatar: downloadUrl }));
+        });
+      }
+    );
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      dispatch(updateUserStart())
-      
+      dispatch(updateUserStart());
       const res = await axios.post(`/api/user/update/${currentUser.data._id}`, formData, {
         headers: {
           'Content-Type': 'application/json',
-          withCredentials: true
+          withCredentials: true,
         },
       });
-      
+
       const data = res.data;
-      if(data.success === false){
+      if (data.success === false) {
         dispatch(updateUserFailure(data.message));
         return;
       }
-      
+
       dispatch(updateUserSuccess(data));
-      setUpdateSucess(true)
+      setUpdateSuccess(true);  // Show success message
     } catch (error) {
-      if (error.response && error.response.status === 401){
+      if (error.response && error.response.status === 401) {
         dispatch(updateUserFailure("Unauthorized request. Please login again."));
-      }
-      else{
-        dispatch(updateUserFailure(error.message))
+      } else {
+        dispatch(updateUserFailure(error.message));
       }
     }
-  }
-  
+  };
+
+  const handleDelete = async (e) => {
+    try {
+      dispatch(deleteUserStart());
+      const res = await axios.delete(`/api/user/delete/${currentUser.data._id}`);
+      const data = res.data;
+      if (data.success === false) {
+        dispatch(deleteUserFailure(data.message));
+        return;
+      }
+      dispatch(deleteUserSuccess(data));
+    } catch (error) {
+      dispatch(deleteUserFailure(error.message));
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      dispatch(signoutUserStart());
+      const res = await axios.get("/api/auth/signout");
+      const data = res.data;
+      if (data.success === false) {
+        dispatch(signoutUserFailure(data.message));
+        return;
+      }
+      dispatch(signoutUserSuccess());
+    } catch (error) {
+      dispatch(signoutUserFailure(error.message));
+    }
+  };
+
   return (
     <div className='p-3 max-w-lg mx-auto'>
       <h1 className='text-3xl text-center font-semibold my-5'>Profile</h1>
       <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
-        <input onChange={(e)=>setFile(e.target.files[0])} 
-        type="file" ref={fileRef} hidden accept='image/*'/>
-        <img onClick={()=>fileRef.current.click()}
-         src={formData.avatar || currentUser.data.avatar} alt="profile" className="rounded-full h-24 w-24 object-cover cursor-pointer
-        self-center mt-2"/>
+        <input onChange={(e) => setFile(e.target.files[0])}
+          type="file" ref={fileRef} hidden accept='image/*' />
+        <img onClick={() => fileRef.current.click()}
+          // Use formData.avatar to show updated avatar
+          src={formData.avatar || currentUser.data.avatar} alt="profile" className="rounded-full h-24 w-24 object-cover cursor-pointer self-center mt-2" />
         <p className='text-sm self-center'>
-          {fileUploadError?
-          (<span className="text-red-700">Error in uploading image (image must be less than 2mb)</span>):
-           filePerc>0 && filePerc < 100 ? (
-            <span className="text-slate-700">{`Uploading ${filePerc}%`}</span>
-          ):
-           filePerc===100 ? (
-            <span className="text-green-700">Image Successfully Uploaded</span>
-          )
-          :""
+          {fileUploadError ?
+            (<span className="text-red-700">Error in uploading image (image must be less than 2mb)</span>) :
+            filePerc > 0 && filePerc < 100 ? (
+              <span className="text-slate-700">{`Uploading ${filePerc}%`}</span>
+            ) :
+              filePerc === 100 ? (
+                <span className="text-green-700">Image Successfully Uploaded</span>
+              ) : ""
           }
         </p>
         <input type="text" placeholder="username" id="username" className='border p-3 rounded-lg'
-        defaultValue={currentUser.data.username} onChange={handleChange}/>
+          value={formData.username} onChange={handleChange} />  {/* Use value from formData */}
         <input type="email" placeholder="email" id="email" className='border p-3 rounded-lg'
-        defaultValue={currentUser.data.email} onChange={handleChange}/>
+          value={formData.email} onChange={handleChange} />  {/* Use value from formData */}
         <input type="password" placeholder="password" id="password" className='border p-3 rounded-lg'
-         onChange={handleChange}/>
+          onChange={handleChange} />
         <button disabled={loading} className='bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80'>
-          {loading? 'Loading...':'Update'}
+          {loading ? 'Loading...' : 'Update'}
         </button>
       </form>
       <div className='flex justify-between mt-5'>
-        <span className="text-red-700 cursor-pointer">Delete Account</span>
-        <span className="text-red-700 cursor-pointer">Sign Out</span>
+        <span onClick={handleDelete} className="text-red-700 cursor-pointer">Delete Account</span>
+        <span onClick={handleSignOut} className="text-red-700 cursor-pointer">Sign Out</span>
       </div>
-      <p className="text-red-700 mt-5">{error?error:""}</p>
-      <p className="text-green-700 mt-5">{updateSuccess? "User is updated successfully":""}</p>
+      <p className="text-red-700 mt-5">{error ? error : ""}</p>
+      <p className="text-green-700 mt-5">{updateSuccess ? "User is updated successfully" : ""}</p>
     </div>
-  )
+  );
 }
 
-export default Profile
+export default Profile;

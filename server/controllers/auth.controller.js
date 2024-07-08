@@ -41,6 +41,15 @@ export const signin = asyncHandler(async(req,res)=>{
         .json(new ApiResponse(200,rest,"User logged in successfully"))
 })
 
+export const signout = asyncHandler(async(req,res)=>{
+    try {
+        res.clearCookie('access_token')
+        res.status(200).json(new ApiResponse(200,"User logged out successfully"))
+    } catch (error) {
+        throw new ApiError(500,error.message)
+    }
+})
+
 export const google = asyncHandler(async(req,res)=>{
     const user = await User.findOne({email:req.body.email})
     if(user){
