@@ -49,7 +49,8 @@ const listingSchema = new Schema({
         required:true
     },
     userRef:{
-        type:String,
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"User",
         required:true
     }
 },{timestamps:true})
