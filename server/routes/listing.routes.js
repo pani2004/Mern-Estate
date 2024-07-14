@@ -1,5 +1,5 @@
 import express from "express"
-import { createListing, deleteListing, getListing, updateListing } from "../controllers/listing.controller.js"
+import { createListing, deleteListing, getListing, getListings, updateListing } from "../controllers/listing.controller.js"
 import { verifyUser } from "../middleware/auth.middleware.js"
 
 
@@ -9,4 +9,5 @@ router.post("/create",verifyUser,createListing)
 router.delete("/delete/:id",verifyUser,deleteListing)
 router.post("/update/:id",verifyUser,updateListing)
 router.get("/get/:id",getListing)
+router.get("/get",getListings)
 export default router
