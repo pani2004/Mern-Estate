@@ -1,3 +1,4 @@
+import { Listing } from "../models/listing.model.js";
 import { User } from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -35,5 +36,19 @@ export const deleteUser = asyncHandler(async(req,res)=>{
     }
     else{
         throw new ApiError(501,"Internal Server error")
+    }
+})
+
+export const getUserListing = asyncHandler(async(req,res)=>{
+    if(req.user.id === req.params.id){
+      try {
+        const listings = await Listing.find({userRef:req.params.id})
+        return res.status(200).json(new ApiResponse(200,listings,"Successfully fetched"))
+      } catch (error) {
+        throw new ApiError(500,error)
+      }
+    }
+    else{
+        throw new ApiError(401,"You can only view your own listing")
     }
 })
