@@ -44,3 +44,11 @@ export const updateListing = asyncHandler(async(req,res)=>{
     )
     return res.status(200).json(new ApiResponse(200,updatedListing,"Listing updated successfully"))
 })
+
+export const getListing = asyncHandler(async(req,res)=>{
+    const listing = await Listing.findById(req.params.id)
+    if(!listing){
+        throw new ApiError(404,"Listing not found")
+    }
+    return res.status(200).json(new ApiResponse(200,listing,"Listing fetched successfully"))
+})
