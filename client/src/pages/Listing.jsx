@@ -82,12 +82,19 @@ function Listing() {
           )}
           <div className='flex flex-col max-w-4xl mx-auto p-3 my-7 gap-4'>
           <p className='text-2xl font-semibold'>
-              {listing.data.name} - ${' '}
-              {listing.data.offer
-                ? listing.data.discountPrice.toLocaleString('en-US')
-                : listing.data.regularPrice.toLocaleString('en-US')}
-              {listing.data.type === 'rent' && ' / month'}
-            </p>
+            {listing.data.name} - {' '}
+            {listing.data.offer && (
+            <>
+            <span className="text-gray-400 line-through">${listing.data.regularPrice.toLocaleString('en-US')}</span>{' '}
+            ${listing.data.discountPrice.toLocaleString('en-US')}
+           </>
+           )}
+            {!listing.data.offer && (
+            `$${listing.data.regularPrice.toLocaleString('en-US')}`
+        )}
+            {listing.data.type === 'rent' && ' / month'}
+           </p>
+
             <p className='flex items-center mt-6 gap-2 text-slate-600  text-sm'>
               <FaMapMarkerAlt className='text-green-700' />
               {listing.data.address}
@@ -99,7 +106,7 @@ function Listing() {
                 {
                     listing.data.offer && (
                         <p className="bg-green-900 w-full max-w-[200px] text-white text-center p-1 rounded-md">
-                        ${+listing.data.regularPrice - +listing.data.discountPrice}
+                        ${+listing.data.regularPrice - +listing.data.discountPrice} Off
                         </p>
                     )
                 }
