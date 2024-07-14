@@ -52,3 +52,12 @@ export const getUserListing = asyncHandler(async(req,res)=>{
         throw new ApiError(401,"You can only view your own listing")
     }
 })
+
+export const getUser = asyncHandler(async(req,res)=>{
+    const user = await User.findById(req.params.id)
+    if(!user){
+        throw new ApiError(404,"User not found")
+    }
+    const {password: pass, ...rest} = user._doc
+    return res.status(200).json(new ApiResponse(200,rest,"User fetched successfully"))
+})
