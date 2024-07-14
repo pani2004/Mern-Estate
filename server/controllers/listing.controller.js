@@ -28,3 +28,19 @@ export const deleteListing = asyncHandler(async(req,res)=>{
     const deletedListing = await Listing.findByIdAndDelete(req.params.id)
     return res.status(200).json(new ApiResponse(200,deletedListing,"Listing deleted"))
 })
+
+export const updateListing = asyncHandler(async(req,res)=>{
+    const listing = await Listing.findById(req.params.id)
+    if(!listing){
+     throw new ApiError(404,"Listing not found")
+    }
+    if(req.user.id !== listing.userRef.toString()){
+        throw new ApiError(401,"You can update your own listing")
+    }
+    const updatedListing = await Listing.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        {new:true}
+    )
+    return res.status(200).json(new ApiResponse(200,updatedListing,"Listing updated successfully"))
+})
