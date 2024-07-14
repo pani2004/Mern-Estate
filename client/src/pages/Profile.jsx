@@ -113,13 +113,28 @@ function Profile() {
       try {
         setShowListingsError(false)
         const res = await axios.get(`/api/user/listings/${currentUser.data._id}`)
-        const data = res
+        const data = res.data
+        console.log("Listings API Response:", data);
         if(data.success === false){
           setShowListingsError(true)
           return
-        } setUserListings(data)
+        } 
+        setUserListings(data.data)
       } catch (error) {
         setShowListingsError(true)
+      }
+    }
+    const handleListingDelete = async(listingId)=>{
+      try {
+        const res = await axios.delete(`/api/listing/delete/${listingId}`)
+        const data = res.data
+        if(data.success === false){
+          console.log(data.message)
+          return
+        }
+        setUserListings((prev)=>prev.filter((listing)=>listing._id !== listingId))
+      } catch (error) {
+        console.log(error.message) 
       }
     }
   return (
@@ -164,10 +179,10 @@ function Profile() {
       <p className="text-green-700 mt-5">{updateSuccess ? "User is updated successfully" : ""}</p>
       <button onClick={handleShowListings} className="text-green-700 w-full">Show Listings</button>
       <p className="text-red-700 mt-5">{showListingsError? "Error Showing Listings" : ''}</p>
-      {userListings && userListings.data && userListings.data.data.length > 0 &&
+      {userListings &&  userListings.length > 0 &&
         <div className="flex flex-col gap-4">
             <h1 className="text-center mt-7 text-2xl font-semibold">Your Listings</h1>
-          {userListings.data.data.map((listing) => (
+          {userListings.map((listing) => (
         <div key={listing._id} className="border rounded-lg p-3 flex justify-between items-center gap-4">
           <Link to={`/listing/${listing._id}`}>
             <img src={listing.imageUrls[0]} alt="listing image" className="h-16 w-16 object-contain" />
@@ -176,7 +191,7 @@ function Profile() {
              <p>{listing.name}</p>
           </Link>
           <div className="flex flex-col gap-2 items-center">
-             <button className="text-red-700 uppercase">Delete</button>
+             <button onClick={()=>handleListingDelete(listing._id)} className="text-red-700 uppercase">Delete</button>
              <button className="text-green-700 uppercase">Edit</button>
           </div>
         </div>
